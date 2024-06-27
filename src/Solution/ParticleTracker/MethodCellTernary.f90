@@ -8,7 +8,7 @@ module MethodCellTernaryModule
   use CellDefnModule
   use SubcellTriModule, only: SubcellTriType, create_subcell_tri
   use ParticleModule
-  use TrackModule, only: TrackFileControlType
+  use TrackControlModule, only: TrackControlType
   use GeomUtilModule, only: area
   use ConstantsModule, only: DZERO, DONE, DTWO
   implicit none
@@ -90,7 +90,7 @@ contains
     call method_subcell_tern%init( &
       cell=this%cell, &
       subcell=this%subcell, &
-      trackfilectl=this%trackfilectl, &
+      trackctl=this%trackctl, &
       tracktimes=this%tracktimes)
     submethod => method_subcell_tern
   end subroutine load_mct

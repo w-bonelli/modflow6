@@ -9,7 +9,7 @@ module MethodCellPollockQuadModule
   use CellDefnModule, only: CellDefnType
   use SubcellRectModule, only: SubcellRectType, create_subcell_rect
   use ParticleModule, only: ParticleType
-  use TrackModule, only: TrackFileControlType
+  use TrackControlModule, only: TrackControlType
   implicit none
 
   private
@@ -64,7 +64,7 @@ contains
     call method_subcell_plck%init( &
       cell=this%cell, &
       subcell=this%subcell, &
-      trackfilectl=this%trackfilectl, &
+      trackctl=this%trackctl, &
       tracktimes=this%tracktimes)
     submethod => method_subcell_plck
   end subroutine load_mcpq

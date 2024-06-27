@@ -9,7 +9,7 @@ module MethodModule
   use PrtFmiModule, only: PrtFmiType
   use CellModule, only: CellType
   use CellDefnModule, only: CellDefnType
-  use TrackModule, only: TrackFileControlType
+  use TrackControlModule, only: TrackControlType
   use TimeSelectModule, only: TimeSelectType
   implicit none
 
@@ -19,25 +19,26 @@ module MethodModule
   !> @brief Base type for particle tracking methods.
   !!
   !! The PRT tracking algorithm invokes a "tracking method" for each
-  !! domain. A domain can be a model, cell in a model, or subcell in
-  !! a cell. Tracking proceeds recursively, delegating to a possibly
-  !! arbitrary number of subdomains (currently, only the three above
-  !! are recognized). A tracking method is responsible for advancing
-  !! a particle through a domain, delegating to subdomains as needed
-  !! depending on cell geometry (implementing the strategy pattern).
+  !! domain. Tracking proceeds recursively, delegating to a possibly
+  !! arbitrary number of subdomains. Each domain method advances the
+  !! particle through the domain, delegating to subdomains as needed
+  !! depending on domain geometry, user options, and other variables.
+  !!
+  !! This implements the strategy pattern:
+  !! https://en.wikipedia.org/wiki/Strategy_pattern
   !<
   type, abstract :: MethodType
     character(len=40), pointer, public :: type !< method name
     logical(LGP), public :: delegates !< whether the method delegates
-    type(PrtFmiType), pointer, public :: fmi => null() !< ptr to fmi
-    class(CellType), pointer, public :: cell => null() !< ptr to the current cell
-    class(SubcellType), pointer, public :: subcell => null() !< ptr to the current subcell
-    type(TrackFileControlType), pointer, public :: trackfilectl => null() !< ptr to track file control
-    type(TimeSelectType), pointer, public :: tracktimes => null() !< ptr to user-defined tracking times
-    integer(I4B), dimension(:), pointer, contiguous, public :: izone => null() !< pointer to zone numbers
-    real(DP), dimension(:), pointer, contiguous, public :: flowja => null() !< pointer to intercell flows
-    real(DP), dimension(:), pointer, contiguous, public :: porosity => null() !< pointer to aquifer porosity
-    real(DP), dimension(:), pointer, contiguous, public :: retfactor => null() !< pointer to retardation factor
+    type(PrtFmiType), pointer, public :: fmi => null() !< fmi
+    class(CellType), pointer, public :: cell => null() !< current cell
+    class(SubcellType), pointer, public :: subcell => null() !< current subcell
+    type(TrackControlType), pointer, public :: trackctl => null() !< track control
+    type(TimeSelectType), pointer, public :: tracktimes => null() !< tracking times
+    integer(I4B), dimension(:), pointer, contiguous, public :: izone => null() !< zone numbers
+    real(DP), dimension(:), pointer, contiguous, public :: flowja => null() !< intercell flows
+    real(DP), dimension(:), pointer, contiguous, public :: porosity => null() !< aquifer porosity
+    real(DP), dimension(:), pointer, contiguous, public :: retfactor => null() !< retardation factor
   contains
     ! Implemented in all subtypes
     procedure(apply), deferred :: apply
@@ -70,13 +71,13 @@ module MethodModule
 
 contains
 
-  subroutine init(this, fmi, cell, subcell, trackfilectl, tracktimes, &
+  subroutine init(this, fmi, cell, subcell, trackctl, tracktimes, &
                   izone, flowja, porosity, retfactor)
     class(MethodType), intent(inout) :: this
     type(PrtFmiType), intent(in), pointer, optional :: fmi
     class(CellType), intent(in), pointer, optional :: cell
     class(SubcellType), intent(in), pointer, optional :: subcell
-    type(TrackFileControlType), intent(in), pointer, optional :: trackfilectl
+    type(TrackControlType), intent(in), pointer, optional :: trackctl
     type(TimeSelectType), intent(in), pointer, optional :: tracktimes
     integer(I4B), intent(in), pointer, optional :: izone(:)
     real(DP), intent(in), pointer, optional :: flowja(:)
@@ -86,7 +87,7 @@ contains
     if (present(fmi)) this%fmi => fmi
     if (present(cell)) this%cell => cell
     if (present(subcell)) this%subcell => subcell
-    if (present(trackfilectl)) this%trackfilectl => trackfilectl
+    if (present(trackctl)) this%trackctl => trackctl
     if (present(tracktimes)) this%tracktimes => tracktimes
     if (present(izone)) this%izone => izone
     if (present(flowja)) this%flowja => flowja
@@ -180,8 +181,8 @@ contains
     end if
 
     ! Save the particle's state to any registered tracking output files
-    call this%trackfilectl%save(particle, kper=per, &
-                                kstp=stp, reason=reason)
+    call this%trackctl%save(particle, kper=per, &
+                          kstp=stp, reason=reason)
   end subroutine save
 
   !> @brief Update particle state and check termination conditions

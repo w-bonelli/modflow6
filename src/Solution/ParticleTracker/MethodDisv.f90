@@ -12,7 +12,7 @@ module MethodDisvModule
   use PrtFmiModule, only: PrtFmiType
   use DisvModule, only: DisvType
   use ArrayHandlersModule, only: ExpandArray
-  use TrackModule, only: TrackFileControlType
+  use TrackControlModule, only: TrackControlType
   use GeomUtilModule, only: get_jk, shared_face
   implicit none
 
@@ -94,7 +94,7 @@ contains
         ! -- cell method and set cell method pointer
         call method_cell_ptb%init( &
           cell=this%cell, &
-          trackfilectl=this%trackfilectl, &
+          trackctl=this%trackctl, &
           tracktimes=this%tracktimes)
         submethod => method_cell_ptb
       else
@@ -102,7 +102,7 @@ contains
         if (particle%ifrctrn > 0) then
           call method_cell_tern%init( &
             cell=this%cell, &
-            trackfilectl=this%trackfilectl, &
+            trackctl=this%trackctl, &
             tracktimes=this%tracktimes)
           submethod => method_cell_tern
         else if (cell%defn%can_be_rect) then
@@ -110,7 +110,7 @@ contains
           base => rect
           call method_cell_plck%init( &
             cell=base, &
-            trackfilectl=this%trackfilectl, &
+            trackctl=this%trackctl, &
             tracktimes=this%tracktimes)
           submethod => method_cell_plck
         else if (cell%defn%can_be_quad) then
@@ -118,13 +118,13 @@ contains
           base => quad
           call method_cell_quad%init( &
             cell=base, &
-            trackfilectl=this%trackfilectl, &
+            trackctl=this%trackctl, &
             tracktimes=this%tracktimes)
           submethod => method_cell_quad
         else
           call method_cell_tern%init( &
             cell=this%cell, &
-            trackfilectl=this%trackfilectl, &
+            trackctl=this%trackctl, &
             tracktimes=this%tracktimes)
           submethod => method_cell_tern
         end if

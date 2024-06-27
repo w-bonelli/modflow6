@@ -1,4 +1,4 @@
-module TrackModule
+module TrackControlModule
 
   use KindModule, only: DP, I4B, LGP
   use ConstantsModule, only: DZERO, DONE
@@ -8,7 +8,7 @@ module TrackModule
 
   private save_record
   public :: TrackFileType
-  public :: TrackFileControlType
+  public :: TrackControlType
 
   !> @brief Output file containing all or some particle pathlines.
   !!
@@ -35,7 +35,7 @@ module TrackModule
   !! An arbitrary number of files can be managed. Internal arrays
   !! are resized as needed.
   !<
-  type :: TrackFileControlType
+  type :: TrackControlType
     private
     type(TrackFileType), public, allocatable :: trackfiles(:) !< output files
     integer(I4B), public :: ntrackfiles !< number of output files
@@ -50,7 +50,7 @@ module TrackModule
     procedure, public :: init_track_file
     procedure, public :: save
     procedure, public :: set_track_events
-  end type TrackFileControlType
+  end type TrackControlType
 
   ! Track file header
   character(len=*), parameter, public :: TRACKHEADER = &
@@ -122,7 +122,7 @@ contains
   !> @brief Initialize a new track file
   subroutine init_track_file(this, iun, csv, iprp)
     ! -- dummy
-    class(TrackFileControlType) :: this
+    class(TrackControlType) :: this
     integer(I4B), intent(in) :: iun
     logical(LGP), intent(in), optional :: csv
     integer(I4B), intent(in), optional :: iprp
@@ -151,7 +151,7 @@ contains
   !> @brief Expand the trackfile array, internal use only
   subroutine expand(this, increment)
     ! -- dummy
-    class(TrackFileControlType) :: this
+    class(TrackControlType) :: this
     integer(I4B), optional, intent(in) :: increment
     ! -- local
     integer(I4B) :: inclocal
@@ -253,7 +253,7 @@ contains
   !<
   subroutine save(this, particle, kper, kstp, reason, level)
     ! -- dummy
-    class(TrackFileControlType), intent(inout) :: this
+    class(TrackControlType), intent(inout) :: this
     type(ParticleType), pointer, intent(in) :: particle
     integer(I4B), intent(in) :: kper
     integer(I4B), intent(in) :: kstp
@@ -305,7 +305,7 @@ contains
                               terminate, &
                               weaksink, &
                               usertime)
-    class(TrackFileControlType) :: this
+    class(TrackControlType) :: this
     logical(LGP), intent(in) :: release
     logical(LGP), intent(in) :: cellexit
     logical(LGP), intent(in) :: timestep
@@ -320,4 +320,4 @@ contains
     this%trackusertime = usertime
   end subroutine set_track_events
 
-end module TrackModule
+end module TrackControlModule

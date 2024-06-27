@@ -8,7 +8,7 @@ module MethodCellPollockModule
   use CellRectModule, only: CellRectType, create_cell_rect
   use SubcellRectModule, only: SubcellRectType, create_subcell_rect
   use ParticleModule, only: ParticleType
-  use TrackModule, only: TrackFileControlType
+  use TrackControlModule, only: TrackControlType
   implicit none
 
   private
@@ -66,7 +66,7 @@ contains
     call method_subcell_plck%init( &
       cell=this%cell, &
       subcell=this%subcell, &
-      trackfilectl=this%trackfilectl, &
+      trackctl=this%trackctl, &
       tracktimes=this%tracktimes)
     submethod => method_subcell_plck
     particle%idomain(next_level) = 1
