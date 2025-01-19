@@ -14,6 +14,7 @@ module DisModule
   use MemoryManagerModule, only: mem_allocate, mem_deallocate
   use MemoryManagerExtModule, only: mem_set_value, memorystore_remove
   use TdisModule, only: kstp, kper, pertim, totim, delt
+  use LongLineReaderModule, only: LongLineReaderType
 
   implicit none
   private
@@ -32,7 +33,7 @@ module DisModule
     real(DP), dimension(:, :, :), pointer :: botm => null() !< top and bottom elevations for each cell (ncol, nrow, nlay)
     real(DP), dimension(:), pointer, contiguous :: cellx => null() !< cell center x coordinate for column j
     real(DP), dimension(:), pointer, contiguous :: celly => null() !< cell center y coordinate for row i
-
+    type(LongLineReaderType) :: line_reader
   contains
 
     procedure :: dis_df => dis3d_df

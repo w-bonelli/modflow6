@@ -15,6 +15,7 @@ module DisvModule
   use MemoryManagerModule, only: mem_allocate, mem_deallocate, mem_setptr
   use MemoryManagerExtModule, only: mem_set_value, memorystore_remove
   use TdisModule, only: kstp, kper, pertim, totim, delt
+  use LongLineReaderModule, only: LongLineReaderType
 
   implicit none
   private
@@ -32,7 +33,7 @@ module DisvModule
     real(DP), dimension(:), pointer, contiguous :: top1d => null() !< top elevations for each cell at top of model (ncpl)
     real(DP), dimension(:, :), pointer, contiguous :: bot2d => null() !< bottom elevations for each cell (ncpl, nlay)
     integer(I4B), dimension(:, :), pointer, contiguous :: idomain => null() !< idomain (ncpl, nlay)
-
+    type(LongLineReaderType) :: line_reader
   contains
 
     procedure :: dis_df => disv_df
@@ -837,6 +838,128 @@ contains
     close (iunit)
     !
   end subroutine write_grb
+
+  !> @brief Load a discretization from a binary grid file.
+  function load_grb(dis, inunit, iout) result(disv)
+    ! dummy
+    class(DisBaseType), pointer :: dis
+    integer(I4B), intent(in) :: inunit
+    integer(I4B), intent(in), optional :: iout
+    class(DisvType) :: disv
+    ! local
+    character(len=:), allocatable :: line
+    character(len=10) :: grid, key, dtype
+    real(DP) :: rval
+    integer(I4B) :: liout, lloc, istart, istop, ival, d
+    logical(LGP) :: end_of_header
+    integer(I4B), allocatable :: shp(:)
+
+    if (present(iout)) then
+      liout = iout
+    else
+      liout = 0
+    end if
+
+    ! grid type
+    call this%line_reader%rdcom(inunit, liout, line, ierr)
+    lloc = 1
+    call urword(line, lloc, istart, istop, 1, ival, rval, liout, 0)
+    call urword(line, lloc, istart, istop, 1, ival, rval, liout, 0)
+    grid = line(istart:istop)
+    call upcase(grid)
+    if (grid /= "DISV") then
+      ! todo error
+    end if
+
+    ! version
+    call this%line_reader%rdcom(inunit, liout, line, ierr)
+    lloc = 1
+    call urword(line, lloc, istart, istop, 1, ival, rval, liout, 0)
+    call urword(line, lloc, istart, istop, 2, ival, rval, liout, 0)
+    version = ival
+
+    ! ntxt
+    call this%line_reader%rdcom(inunit, liout, line, ierr)
+    lloc = 1
+    call urword(line, lloc, istart, istop, 1, ival, rval, liout, 0)
+    call urword(line, lloc, istart, istop, 2, ival, rval, liout, 0)
+    ntxt = ival
+
+    ! lentxt
+    call this%line_reader%rdcom(inunit, liout, line, ierr)
+    lloc = 1
+    call urword(line, lloc, istart, istop, 1, ival, rval, liout, 0)
+    call urword(line, lloc, istart, istop, 2, ival, rval, liout, 0)
+    lentxt = ival
+
+    ! ncells
+    call this%line_reader%rdcom(inunit, liout, line, ierr)
+    lloc = 1
+    call urword(line, lloc, istart, istop, 1, ival, rval, liout, 0)
+    call urword(line, lloc, istart, istop, 2, ival, rval, liout, 0)
+    ncells = ival
+    
+
+      ! data type
+      call urword(line, lloc, istart, istop, 2, ival, rval, 0, 0)
+      dtype = line(istart:istop)
+      call upcase(dtype)
+      if (dtype == "INTEGER") then
+        ncode = 2
+      else if (dtype == "DOUBLE") then
+        ncode = 3
+      end if
+
+      ! dimensions
+      call urword(line, lloc, istart, istop, 1, ival, rval, 0, 0)
+      call urword(line, lloc, istart, istop, 2, ival, rval, 0, 0)
+      ndim = ival
+
+      ! shape or scalar value
+      if (ndim == 0) then
+        call urword(line, lloc, istart, istop, ncode, ival, rval, 0, 0)
+        select case (key)
+        case ('NCELLS')
+          ncells = ival
+        case ('NLAY')
+          nlay = ival
+        case ('NROW')
+          nrow = ival
+        case ('NCOL')
+          ncol = ival
+        case ('NCPL')
+          ncpl = ival
+        case ('NVERT')
+          nvert = ival
+        case ('NJAVERT')
+          njavert = ival
+        case ('NJA')
+          nja = ival
+        case ('XORIGIN')
+          xorigin = rval
+        case ('YORIGIN')
+          yorigin = rval
+        case ('ANGROT')
+          angrot = rval
+        end select
+      else
+        allocate (shp(ndim))
+        do d = 1, ndim
+          call urword(line, lloc, istart, istop, ncode, ival, rval, 0, 0)
+          shp(d) = ival
+        end do
+      end if
+
+      ! last text key, rest is binary
+      if (key == 'ICELLTYPE') exit
+    end do
+
+    ! TODO binary data
+    
+
+    ! rewind file
+    rewind (this%inunit)
+  end function load_grb
 
   !> @brief Convert a user nodenumber to a string (nodenumber) or (k,j)
   !<

@@ -16,6 +16,7 @@ module DisuModule
   use MemoryManagerExtModule, only: mem_set_value, memorystore_remove
   use TdisModule, only: kstp, kper, pertim, totim, delt
   use DisvGeom, only: line_unit_vector
+  use LongLineReaderModule, only: LongLineReaderType
 
   implicit none
 
@@ -45,7 +46,7 @@ module DisuModule
     integer(I4B), dimension(:), pointer, contiguous :: javert => null() ! cell vertex pointer ja array
     integer(I4B), dimension(:), pointer, contiguous :: idomain => null() ! idomain (nodes)
     logical(LGP) :: readFromFile ! True, when DIS is read from file (almost always)
-
+    type(LongLineReaderType) :: line_reader
   contains
 
     procedure :: dis_df => disu_df

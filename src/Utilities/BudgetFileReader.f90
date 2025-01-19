@@ -69,6 +69,7 @@ contains
     integer(I4B) :: kstp_last, kper_last
     integer(I4B) :: maxaux
     logical :: success
+
     this%inunit = iu
     this%endoffile = .false.
     this%nbudterms = 0
